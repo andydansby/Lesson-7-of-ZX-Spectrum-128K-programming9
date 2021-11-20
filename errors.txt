@@ -1,0 +1,138 @@
+bank swithcing
+
+main.c
+void main ()
+{
+    SETUP_IM2();// set up for the interrupt mode 2
+    // this will point the I register to IM2 Vector
+
+    disable_interupts();
+
+    bank_switch (0);
+
+    //attention new
+    //we will need to initialize the player
+
+
+intrinsic_label(buffer_start);
+    INIT_BUFFERS();//check  $C02D
+intrinsic_label(buffer_end);
+
+
+
+
+
+	PLAYER_OFF();//check    $C0F5
+    //SONG = 0;
+    //CARGA_CANCION ();
+	//wyz_load_music (1);//load song 0
+
+	//attention new
+	//will need to load the song
+	//wyz_load_music (1);//load song 0  WTF
+	LOAD_SONG(1);
+
+
+    zx_cls(PAPER_WHITE);
+    printf("\x16\x01\x02");
+    printf ("Main () running in uncontended\n");
+
+    printf ("_Variable_in_contended = %d\n", Variable_in_contended);
+    printf ("_Variable_in_Bank0 = %d\n", Variable_in_Bank0);
+
+    printf ("tom = %d\n", tom);
+    printf ("dick = %d\n", dick);
+    printf ("harry = %d\n", harry);
+    printf ("eve = %u\n", eve);
+    printf ("bob = %u\n\n", bob);
+
+    harry = add_two_numbers (tom, dick);
+    printf ("Add 2 numbers %u + %u = %u\n", tom, dick, harry);
+
+    harry = subtract2numbers (Variable_in_Bank0, eve);
+    printf ("Subtract 2 numbers %u - %u = %u\n", Variable_in_Bank0, eve, harry);
+
+    harry = multiply2numbers (Variable_in_contended, bob);
+    printf ("Multiply 2 numbers %u * %u = %u\n", Variable_in_contended, bob, harry);
+
+    harry = add_two_numbers (Variable_in_contended, Variable_in_Bank0);
+    printf ("Add 2 numbers %u + %u = %u\n", Variable_in_contended, Variable_in_Bank0, harry);
+
+    printf("\n\nPress 0-7 for Border Test\n");
+
+
+    pauseLoop();
+intrinsic_label(pause_end);
+
+    printf("Does the music play now?");
+
+    //attention new
+    //we will need to be in bank 0
+    bank_switch (0);
+    //attention new
+    enable_interupts ();
+    //attention new
+
+    while(1)
+    {
+        /*__asm
+            halt
+        __endasm*/
+
+        intrinsic_label(inside_loop);
+        //attention new
+        //INICIO();//check
+        //showScreen1();
+
+        //showScreen1();
+
+
+/*
+        showScreen2();
+        showScreen3();
+        showScreen4();
+        showScreen5();
+        showScreen6();
+        showScreen7();
+
+        //key_test();
+*/
+    }
+}
+////////////////
+
+void showScreen1(void)
+{
+    //attention new
+    disable_interupts();
+    bank_switch (1);//attention new
+    ZX0_decompress (16384, &screen1);
+    //bank = 0;
+    bank_switch (0);//attention new
+    enable_interupts();
+    pauseLoop ();
+}
+
+
+////////////////
+
+//attention new change how we call banks
+//found in IM2.asm
+extern void __FASTCALL__ bank_switch(unsigned char ramBank);
+
+//////////////////
+
+PUBLIC _bank_switch
+_bank_switch:
+    di
+    ld  A,(0x5b5c)      ;Previous value of port
+    and 0xf8
+
+    ;unsigned char passed via __FASTCALL__ are pushed as L of HL
+    or  L           ;or  _bank   Select bank
+
+    ld BC,0x7ffd
+    ld (0x5b5c),A
+    out (C),A
+    ;ei
+ret
